@@ -1,0 +1,40 @@
+{
+  "name": "zomoras-corner",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "server.mjs",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:pages": "tsc -b && vite build --mode pages",
+    "test": "playwright test",
+    "start": "node server.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/icons-material": "9.4.0",
+    "@mui/material": "9.4.0",
+    "@supabase/supabase-js": "2.117.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "express": "5.2.1",
+    "gray-matter": "4.0.3",
+    "marked": "18.0.11",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.3",
+    "typescript": "7.0.2",
+    "vite": "8.2.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0"
+  }
+}

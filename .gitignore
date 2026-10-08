@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+story-draft.json
+writer-setup.txt
+.test-artifacts/
+supabase/.temp/
