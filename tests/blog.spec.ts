@@ -46,6 +46,7 @@ async function mockBackend(page: Page, writer = false) {
     }
     if(url.pathname.startsWith('/rest/v1/writers')) return send(writer ? [{email:'writer@example.invalid'}] : []);
     if(url.pathname.startsWith('/rest/v1/site_settings')) return send(settings);
+    if(url.pathname.startsWith('/rest/v1/story_comments')) return send([]);
     if(url.pathname.startsWith('/rest/v1/posts')) {
       if(method==='GET') return send(rows);
       if(method==='POST' || method==='PATCH') {
@@ -142,5 +143,64 @@ test('invalid imports are rejected; failed writes preserve typed text',async({pa
   await page.route(`${api}/rest/v1/posts**`,route=>route.request().method()==='POST'?route.fulfill({status:500,json:{message:'Test write failure'}}):route.fallback());
   await page.getByRole('button',{name:'Save draft',exact:true}).click();
   await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Test write failure');await expect(page.getByLabel('Title',{exact:true})).toHaveValue('Keep my words');
+});
+
+const commentStory = { id:'10000000-0000-4000-8000-000000000301',slug:'kindness',title:'A little kindness',summary:'A quiet moment',body:'A story worth sharing.',category:'Little joys',status:'published',photos:[],created_at:new Date().toISOString(),updated_at:new Date().toISOString(),published_at:new Date().toISOString() };
+
+test('reader submits text, retains a private receipt after reload, and sees approval',async({page})=>{
+  const backend = await mockBackend(page); backend.setRows([commentStory]);
+  let submitted: Row | null = null; let approved = false;
+  await page.route(`${api}/rest/v1/story_comments**`,route=>route.fulfill({json:approved && submitted ? [{...submitted,status:'approved'}] : []}));
+  await page.route(`${api}/functions/v1/story-comments`,async route=>{
+    const body=route.request().postDataJSON();
+    if(body.action==='challenge') return route.fulfill({json:{id:'20000000-0000-4000-8000-000000000301',question:'What is 4 + 5?'}});
+    if(body.action==='submit') {
+      expect(body.email).toBe('reader@example.com'); expect(body.answer).toBe('9'); expect(body.website).toBe('');
+      submitted={id:body.challenge_id,post_id:body.post_id,name:body.name,body:body.body,created_at:new Date().toISOString()};
+      return route.fulfill({json:{id:submitted.id,receipt:'private-receipt',created_at:submitted.created_at}});
+    }
+    return route.fulfill({json:{statuses:{'20000000-0000-4000-8000-000000000301':approved?'approved':'pending'}}});
+  });
+  await page.goto('/blog/kindness');
+  await page.getByLabel('Your name',{exact:true}).fill('A reader'); await page.getByLabel('Your email',{exact:true}).fill('reader@example.com'); await page.getByLabel('Your comment',{exact:true}).fill('Thank you for a moment of peace.');
+  await page.getByRole('button',{name:'Continue to human check'}).click();
+  await page.getByLabel('A little human check:',{exact:false}).fill('9'); await page.getByRole('button',{name:'Send for approval'}).click();
+  await expect(page.getByText('Pending approval · only on this device')).toBeVisible();
+  expect(await page.evaluate(()=>localStorage.getItem('corner.comment-receipts.v1'))).not.toContain('reader@example.com');
+  await page.reload(); await expect(page.getByText('Pending approval · only on this device')).toBeVisible();
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('.comments-section').screenshot({path:'.test-artifacts/comments-mobile.png'});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  approved=true; await page.getByRole('button',{name:'Refresh comments'}).click();
+  await expect(page.getByText('Pending approval · only on this device')).toHaveCount(0);
+  await expect(page.locator('.comment-list').getByText('Thank you for a moment of peace.')).toBeVisible();
+  await page.evaluate(()=>localStorage.removeItem('corner.comment-receipts.v1')); approved=false; await page.reload();
+  await expect(page.locator('.comment-card')).toHaveCount(0);
+});
+
+test('failed comment submission preserves words and private email',async({page})=>{
+  const backend=await mockBackend(page);backend.setRows([commentStory]);
+  await page.route(`${api}/functions/v1/story-comments`, route=>route.request().postDataJSON().action==='challenge' ? route.fulfill({json:{id:'20000000-0000-4000-8000-000000000302',question:'What is 2 + 3?'}}) : route.fulfill({status:429,json:{error:'Please try again tomorrow.'}}));
+  await page.goto('/blog/kindness');await page.getByLabel('Your name',{exact:true}).fill('A reader');await page.getByLabel('Your email',{exact:true}).fill('reader@example.com');await page.getByLabel('Your comment',{exact:true}).fill('Keep my kind words.');
+  await page.getByRole('button',{name:'Continue to human check'}).click();await page.getByLabel('A little human check:',{exact:false}).fill('5');await page.getByRole('button',{name:'Send for approval'}).click();
+  await expect(page.getByRole('alert')).toContainText('Please try again tomorrow.');await expect(page.getByLabel('Your comment',{exact:true})).toHaveValue('Keep my kind words.');await expect(page.getByLabel('Your email',{exact:true})).toHaveValue('reader@example.com');
+  expect(await page.evaluate(()=>localStorage.getItem('corner.comment-receipts.v1'))).toBeNull();
+});
+
+test('writer reviews private email, approves, declines and reverses a decision',async({page})=>{
+  const backend=await mockBackend(page,true);backend.setRows([commentStory]);
+  let status='pending';
+  await page.route(`${api}/rest/v1/story_comments**`,route=>{
+    if(route.request().method()==='PATCH') {status=route.request().postDataJSON().status;return route.fulfill({json:[{id:'comment-one'}]});}
+    const filter=new URL(route.request().url()).searchParams.get('status');
+    return route.fulfill({json:filter===`eq.${status}`?[{id:'comment-one',post_id:commentStory.id,name:'A reader',body:'Thank you for sharing.',status,created_at:new Date().toISOString(),comment_contacts:{email:'reader@example.com',notification_status:'sent'}}]:[]});
+  });
+  await page.goto('/writer');await expect(page.getByRole('heading',{name:'The comment basket.'})).toBeVisible();
+  await expect(page.getByText('Private email: reader@example.com',{exact:false})).toBeVisible();
+  await expect(page.getByRole('link',{name:'Reply by email'})).toHaveAttribute('href',/^mailto:reader%40example.com\?subject=/);
+  await page.getByRole('button',{name:'Approve comment',exact:true}).click();await expect(page.getByRole('status')).toContainText('Comment approved');expect(status).toBe('approved');
+  await page.getByRole('button',{name:'Approved comments',exact:true}).click();await page.getByRole('button',{name:'Decline comment',exact:true}).click();expect(status).toBe('rejected');
+  await page.getByRole('button',{name:'Declined comments',exact:true}).click();await page.getByRole('button',{name:'Return to review'}).click();expect(status).toBe('pending');
+  await page.getByRole('button',{name:'Awaiting approval'}).click();await expect(page.getByText('Thank you for sharing.',{exact:true})).toBeVisible();
 });
 

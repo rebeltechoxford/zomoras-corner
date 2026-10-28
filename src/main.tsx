@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, HashRouter, Link, NavLink, Route, Routes, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { BlogProvider, useBlog } from './blog';
 import { Writer } from './Writer';
+import { Comments } from './Comments';
 import { PostCard, StillLife, StoryContent } from './Story';
 import { categories } from './model';
 import './styles.css';
@@ -72,7 +73,7 @@ function PostPage() {
   const post = posts.find(p => p.slug === slug && p.status === 'published');
   if (loading) return null;
   if (!post) return <NotFound/>;
-  return <section className="section"><Link className="text-link" to="/blog"><Icon name="back"/> Back to the notebook</Link><StoryContent post={post}/><div className="reading-actions"><button className="button secondary" onClick={async () => { try { await navigator.clipboard.writeText(location.href); setCopied('Link copied.'); } catch { setCopied('Copy the address from your browser to share this story.'); } }}>Share this story <Icon name="outward"/></button><span role="status">{copied}</span></div>{posts.filter(p => p.status === 'published' && p.id !== post.id).length > 0 && <><div className="section-heading"><h2>A little more to read.</h2></div><div className="story-grid">{posts.filter(p => p.status === 'published' && p.id !== post.id).slice(0, 2).map(p => <PostCard key={p.id} post={p}/>)}</div></>}</section>;
+  return <section className="section"><Link className="text-link" to="/blog"><Icon name="back"/> Back to the notebook</Link><StoryContent post={post}/><div className="reading-actions"><button className="button secondary" onClick={async () => { try { await navigator.clipboard.writeText(location.href); setCopied('Link copied.'); } catch { setCopied('Copy the address from your browser to share this story.'); } }}>Share this story <Icon name="outward"/></button><span role="status">{copied}</span></div><Comments key={post.id} postId={post.id}/>{posts.filter(p => p.status === 'published' && p.id !== post.id).length > 0 && <><div className="section-heading"><h2>A little more to read.</h2></div><div className="story-grid">{posts.filter(p => p.status === 'published' && p.id !== post.id).slice(0, 2).map(p => <PostCard key={p.id} post={p}/>)}</div></>}</section>;
 }
 function PhotoDiary() {
   const { posts } = useBlog(); const photos = posts.filter(p => p.status === 'published').flatMap(post => post.photos.map(photo => ({ post, photo })));

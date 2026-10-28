@@ -1,0 +1,4 @@
+# Readers can submit without signing in. The handler verifies one-use challenges
+# and authenticates the writer-only action with Supabase Auth and the allowlist.
+[functions.story-comments]
+verify_jwt = false
