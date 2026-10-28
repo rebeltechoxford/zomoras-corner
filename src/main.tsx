@@ -11,9 +11,24 @@ import { categories } from './model';
 import './styles.css';
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const { settings, error, loading, refresh, isWriter } = useBlog();
+  const { settings, posts, error, loading, refresh, isWriter } = useBlog();
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); document.title = `${settings.title} · Little joys & everyday stories`; }, [pathname, settings.title]);
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => {
+    const slug = pathname.startsWith('/blog/') ? pathname.slice(6) : '';
+    const story = posts.find(p => p.status === 'published' && p.slug === slug);
+    const labels: Record<string, string> = { '/blog': 'Stories of faith and everyday life', '/photos': 'Photo diary', '/about': 'About Zomora’s Corner', '/writer': 'Writing desk' };
+    const title = story?.title || labels[pathname] || 'Christian encouragement, love & peace';
+    const description = story?.summary || 'Find a quiet moment of Christian encouragement, love, and peace through everyday stories, a daily Bible verse, and a warm cup of coffee.';
+    document.title = `${title} | ${settings.title}`;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = `https://zomoras-corner.com${pathname === '/' ? '/' : pathname}`;
+    let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; document.head.appendChild(robots); }
+    robots.content = pathname === '/writer' ? 'noindex, nofollow' : 'index, follow';
+  }, [pathname, settings.title, posts]);
   return <><a className="skip-link" href="#main-content" onClick={e => { e.preventDefault(); document.getElementById('main-content')?.focus(); }}>Skip to content</a>
     <div className="welcome-strip">A little corner of the internet. A little room to breathe. <span><Icon name="flower"/></span></div>
     <header className="site-header"><Link className="brand" to="/"><img src={`${import.meta.env.BASE_URL}favicon.png`} alt=""/><span>{settings.title}<small>A PERSONAL NOTEBOOK</small></span></Link>
