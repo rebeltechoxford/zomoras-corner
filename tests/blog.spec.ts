@@ -15,12 +15,8 @@ test('coffee hero loops silently, pauses, and respects reduced motion', async ({
   await expect(page.getByText('A small step is still a step.', {exact:false})).toBeVisible();
   await expect(page.getByText('Psalm 46:10 · NLT')).toBeVisible();
   await page.locator('.coffee-moment').screenshot({path:'.test-artifacts/coffee-hero-desktop.png'});
-  await expect(page.getByRole('button', {name:'Pause coffee video'})).toBeVisible();
+  await expect(page.getByRole('button', {name:'Pause coffee video'})).toHaveCount(0);
   expect(await video.evaluate((v: HTMLVideoElement) => v.muted && v.loop && v.playsInline)).toBeTruthy();
-  await page.getByRole('button', {name:'Pause coffee video'}).click();
-  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBeTruthy();
-  await page.getByRole('button', {name:'Play coffee video'}).click();
-  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBeFalsy();
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:'.test-artifacts/coffee-hero-mobile.png',fullPage:true});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -28,7 +24,6 @@ test('coffee hero loops silently, pauses, and respects reduced motion', async ({
   await page.reload();
   await expect(video).not.toHaveAttribute('src');
   await expect(page.locator('.hero-video-poster')).toBeVisible();
-  await expect(page.getByRole('button', {name:'Play coffee video'})).toBeVisible();
 });
 
 async function mockBackend(page: Page, writer = false) {
