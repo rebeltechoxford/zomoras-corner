@@ -21,7 +21,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <Link className="header-note" to={isWriter ? '/writer' : '/blog'}>{isWriter ? 'Writing desk' : 'Stay a while'} <span><Icon name="outward"/></span></Link>
     </header>
     <main id="main-content" tabIndex={-1}>{error && <div className="notice error" role="alert">We couldn’t load the latest stories. <button onClick={() => void refresh()}>Try again</button></div>}{loading && <p className="loading" role="status">Opening the notebook…</p>}{children}</main>
-    <footer className="site-footer"><div><Link className="footer-brand" to="/">{settings.title}<span><Icon name="flower"/></span></Link><p>{settings.tagline}</p></div><div><Link to="/about">A little about this corner</Link><Link to="/writer">Writer login <Icon name="outward"/></Link>{settings.email && <a href={`mailto:${settings.email}`}>Say hello</a>}</div><small>© {new Date().getFullYear()} {settings.title}. Made for ordinary, lovely days.</small></footer>
+    <footer className="site-footer"><div><Link className="footer-brand" to="/">{settings.title}<span><Icon name="flower"/></span></Link><p>{settings.tagline}</p><img className="footer-signature" src={`${import.meta.env.BASE_URL}zomora-signature.png`} alt="Zomora Sullivan’s signature"/></div><div><Link to="/about">A little about this corner</Link><Link to="/writer">Writer login <Icon name="outward"/></Link>{settings.email && <a href={`mailto:${settings.email}`}>Say hello</a>}</div><small>© {new Date().getFullYear()} Zomora Sullivan. Made for ordinary, lovely days.</small></footer>
   </>;
 }
 function Home() {
