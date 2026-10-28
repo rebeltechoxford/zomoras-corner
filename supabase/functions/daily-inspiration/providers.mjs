@@ -22,9 +22,8 @@ function day(value) {
   return value;
 }
 export function parseQuote(data, today) {
-  const row = data?.[0];
-  if (!row || /zenquotes|too many|rate limit/i.test(`${row.a} ${row.q}`)) throw new Error('Quote provider unavailable');
-  return {text:content(row.q,1500),author:content(row.a,160),day:day(row.date || today),url:'https://zenquotes.io/'};
+  if (!data || data.verification !== 'verified' || data.rights !== 'public-domain') throw new Error('Quote provider unavailable');
+  return {text:content(data.text,1500),author:content(data.author?.name,160),day:day(today),url:'https://api.loving-universe.com/'};
 }
 export function parseVerse(data) {
   const row = data?.votd;

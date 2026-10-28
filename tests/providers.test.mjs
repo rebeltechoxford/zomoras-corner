@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseQuote,parseVerse,dayInChicago} from '../supabase/functions/daily-inspiration/providers.mjs';
 test('feeds reject rate-limit messages and incorrect Bible translations',()=>{
-  assert.throws(()=>parseQuote([{q:'Too many requests',a:'ZenQuotes'}],'2026-10-08'));
+  assert.throws(()=>parseQuote({text:'Unavailable'},'2026-10-08'));
+  assert.equal(parseQuote({text:'Hope',author:{name:'Author'},verification:'verified',rights:'public-domain'},'2026-10-08').author,'Author');
   assert.throws(()=>parseVerse({votd:{version_id:'KJV'}}));
 });
 test('NLT feed becomes plain text and uses a trusted source link',()=>{

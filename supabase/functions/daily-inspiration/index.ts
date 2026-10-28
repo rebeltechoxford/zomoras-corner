@@ -18,7 +18,7 @@ Deno.serve(async req => {
     const {data:cache,error} = await db.from('daily_inspiration').select('*').eq('id',1).single();
     if (error) throw error;
     const payload = () => ({today,quote:cache.quote,verse:cache.verse,retryAt:cache.refresh_after});
-    if (cache.quote?.day === today && cache.verse?.day === today) return reply(payload());
+    if (cache.quote?.day === today && cache.quote?.url === 'https://api.loving-universe.com/' && cache.verse?.day === today) return reply(payload());
     if (Date.parse(cache.refresh_after) > Date.now()) return reply(payload());
     // Claim a refresh across concurrent instances; retries are limited to 15 minutes.
     const retryAt = new Date(Date.now()+15*60*1000).toISOString();
@@ -27,7 +27,7 @@ Deno.serve(async req => {
     if (!lease) return reply(payload());
     cache.refresh_after = retryAt;
     const results = await Promise.allSettled([
-      cache.quote?.day === today ? Promise.resolve(cache.quote) : sourceJson('https://zenquotes.io/api/today').then(data=>parseQuote(data,today)),
+      cache.quote?.day === today && cache.quote?.url === 'https://api.loving-universe.com/' ? Promise.resolve(cache.quote) : sourceJson('https://api.loving-universe.com/today?category=love,hope,self-love&verified=true&public_domain=true&tz=America/Chicago').then(data=>parseQuote(data,today)),
       cache.verse?.day === today ? Promise.resolve(cache.verse) : sourceJson('https://www.biblegateway.com/votd/get/?format=json&version=NLT').then(parseVerse),
     ]);
     for (const [i,key] of ['quote','verse'].entries()) {

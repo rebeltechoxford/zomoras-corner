@@ -51,7 +51,7 @@ The shareable site is `https://zomorascorner.pages.dev`, under the existing Rebe
 
 The hero uses licensed stationary mug footage (see `public/media/CREDITS.md`), subtle depth-animated steam, a static poster, and a pause control. Reduced-motion and data-saving preferences disable autoplay.
 
-The `daily-inspiration` Supabase Edge Function fetches ZenQuotes' daily quote and Bible Gateway's NLT verse-of-the-day feed. It stores only the latest readings, refreshes on the first visit of each Chicago calendar day, and limits failed refresh attempts to once per 15 minutes. Provider outages retain the last successful reading with its date. Attribution links are displayed with the readings. No paid API subscription or scheduled job is required. Verify parsers with `node --test tests/providers.test.mjs`.
+The `daily-inspiration` Supabase Edge Function fetches Loving Universe's daily quote and Bible Gateway's NLT verse-of-the-day feed. It stores only the latest readings, refreshes on the first visit of each Chicago calendar day, and limits failed refresh attempts to once per 15 minutes. Provider outages retain the last successful reading with its date. Attribution links are displayed with the readings. Verify parsers with `node --test tests/providers.test.mjs`.
 
 ### GoDaddy or another Node host
 
